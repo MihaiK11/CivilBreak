@@ -1,9 +1,18 @@
+# Игнорируем временные файлы Unity
 Library/
 Logs/
 Temp/
+Obj/
+Build/
 UserSettings/
-*.csproj
-*.unitypackage
+MemoryCaptures/
+
+# Игнорируем файлы сборки
 *.apk
+*.unitypackage
 *.exe
+*.zip
+*.tar.gz
+
+# Игнорируем файлы Mac
 .DS_Store
