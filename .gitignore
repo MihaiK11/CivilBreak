@@ -1,0 +1,9 @@
+Library/
+Logs/
+Temp/
+UserSettings/
+*.csproj
+*.unitypackage
+*.apk
+*.exe
+.DS_Store
