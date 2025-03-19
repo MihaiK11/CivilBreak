@@ -4,13 +4,16 @@ using System.Collections.Generic;
 public class CarAIController : MonoBehaviour
 {
     [Header("Параметры движения")]
-    public float moveSpeed = 1f;
-    public float slowDownDistance = 0.4f;
-    public float reachThreshold = 0.1f;
+    public float moveSpeed = 0.8f;
+    public float slowDownDistance = 0.5f;
+    public float reachThreshold = 0f;
 
     [Header("Waypoint настройки")]
     public WaypointNode currentTarget;
     [HideInInspector] public WaypointNode previousTarget;
+
+    // Храним историю посещённых поинтов
+    private Queue<WaypointNode> waypointHistory = new Queue<WaypointNode>();
 
     private void Update()
     {
@@ -57,10 +60,41 @@ public class CarAIController : MonoBehaviour
             return;
         }
 
-        List<WaypointNode> options = currentTarget.connectedWaypoints.FindAll(wp => wp != previousTarget);
-        if (options.Count == 0) options = currentTarget.connectedWaypoints;
+        List<WaypointNode> options = new List<WaypointNode>(currentTarget.connectedWaypoints);
+
+        // Удаляем предыдущий узел
+        if (previousTarget != null && options.Count > 1)
+            options.Remove(previousTarget);
+
+        // Исключаем узел, который был ровно 3 точки назад
+        WaypointNode thirdBack = GetWaypointFromHistory(3);
+        if (thirdBack != null && options.Count > 1)
+            options.Remove(thirdBack);
+
+        // Если после фильтрации не осталось — возвращаем всё, кроме предыдущего
+        if (options.Count == 0)
+        {
+            options = new List<WaypointNode>(currentTarget.connectedWaypoints);
+            if (previousTarget != null && options.Count > 1)
+                options.Remove(previousTarget);
+        }
 
         previousTarget = currentTarget;
         currentTarget = options[Random.Range(0, options.Count)];
+
+        // Обновляем историю
+        waypointHistory.Enqueue(currentTarget);
+        if (waypointHistory.Count > 5)
+            waypointHistory.Dequeue();
+    }
+
+    private WaypointNode GetWaypointFromHistory(int stepsBack)
+    {
+        if (waypointHistory.Count >= stepsBack)
+        {
+            WaypointNode[] history = waypointHistory.ToArray();
+            return history[history.Length - stepsBack];
+        }
+        return null;
     }
 }

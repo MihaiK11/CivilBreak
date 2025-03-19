@@ -7,8 +7,8 @@ public class CarSpawner : MonoBehaviour
     public GameObject[] carPrefabs;
     public Transform waypointRoot;
     public float spawnInterval = 4f;
-    public int maxCars = 200;
-    public int carsOnStart = 20;
+    public int maxCars = 5;
+    public int carsOnStart = 2;
 
     private List<WaypointNode> spawnPoints = new List<WaypointNode>();
     private List<GameObject> activeCars = new List<GameObject>();

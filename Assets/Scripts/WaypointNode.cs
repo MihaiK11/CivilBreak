@@ -32,7 +32,7 @@ public class WaypointNode : MonoBehaviour
     {
         // Отрисовка узла
         Gizmos.color = Color.yellow;
-        Gizmos.DrawSphere(transform.position, 0.2f);
+        Gizmos.DrawSphere(transform.position, 0.05f);
 
         // Отрисовка линий к подключенным узлам
         if (connectedWaypoints != null)
