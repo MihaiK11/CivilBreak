@@ -4,24 +4,27 @@ using System.Collections.Generic;
 public class CarAIController : MonoBehaviour
 {
     [Header("Параметры движения")]
-    public float moveSpeed = 0.8f;
-    public float slowDownDistance = 0.5f;
-    public float reachThreshold = 0f;
+    public float maxMoveSpeed = 1.5f;
+    public float acceleration = 1f;
+    public float deceleration = 1.5f;
+    public float slowDownDistance = 1.5f;
+    public float reachThreshold = 0.05f;
+
+    private float currentSpeed = 0f;
 
     [Header("Waypoint настройки")]
     public WaypointNode currentTarget;
     [HideInInspector] public WaypointNode previousTarget;
-
-    // Храним историю посещённых поинтов
     private Queue<WaypointNode> waypointHistory = new Queue<WaypointNode>();
 
     private void Update()
     {
         if (currentTarget == null) return;
 
-        // Направление до точки
         Vector3 direction = currentTarget.transform.position - transform.position;
         direction.y = 0f;
+
+        float distance = direction.magnitude;
 
         if (direction.sqrMagnitude < 0.01f)
         {
@@ -29,23 +32,19 @@ public class CarAIController : MonoBehaviour
             return;
         }
 
-        // Замедляемся при приближении
-        float speed = moveSpeed;
-        float distance = direction.magnitude;
+        // Плавное замедление
         if (distance < slowDownDistance)
-        {
-            speed *= 0.5f;
-        }
+            currentSpeed = Mathf.Max(currentSpeed - deceleration * Time.deltaTime, 0.2f);
+        else
+            currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxMoveSpeed);
 
-        // Жёстко поворачиваем (без анимации)
+        // Двигаем и поворачиваем
         transform.forward = direction.normalized;
+        transform.position += transform.forward * currentSpeed * Time.deltaTime;
 
-        // Двигаем вперёд
-        transform.position += transform.forward * speed * Time.deltaTime;
-
-        // Проверка достижения цели
         Vector3 flatCarPos = new Vector3(transform.position.x, 0, transform.position.z);
         Vector3 flatTarget = new Vector3(currentTarget.transform.position.x, 0, currentTarget.transform.position.z);
+
         if (Vector3.Distance(flatCarPos, flatTarget) < reachThreshold)
         {
             ChooseNextWaypoint();
@@ -61,17 +60,13 @@ public class CarAIController : MonoBehaviour
         }
 
         List<WaypointNode> options = new List<WaypointNode>(currentTarget.connectedWaypoints);
-
-        // Удаляем предыдущий узел
         if (previousTarget != null && options.Count > 1)
             options.Remove(previousTarget);
 
-        // Исключаем узел, который был ровно 3 точки назад
         WaypointNode thirdBack = GetWaypointFromHistory(3);
         if (thirdBack != null && options.Count > 1)
             options.Remove(thirdBack);
 
-        // Если после фильтрации не осталось — возвращаем всё, кроме предыдущего
         if (options.Count == 0)
         {
             options = new List<WaypointNode>(currentTarget.connectedWaypoints);
@@ -82,7 +77,6 @@ public class CarAIController : MonoBehaviour
         previousTarget = currentTarget;
         currentTarget = options[Random.Range(0, options.Count)];
 
-        // Обновляем историю
         waypointHistory.Enqueue(currentTarget);
         if (waypointHistory.Count > 5)
             waypointHistory.Dequeue();
