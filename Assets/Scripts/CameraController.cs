@@ -41,7 +41,7 @@ public class CameraController : MonoBehaviour
 
     void HandleCursorToggle()
     {
-        if (Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand))
+        if (Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand ||Input.GetKey(KeyCode.LeftControl))
         {
             if (!isCursorVisible)
                 ToggleCursor(true);
