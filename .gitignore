@@ -13,6 +13,7 @@ MemoryCaptures/
 *.exe
 *.zip
 *.tar.gz
+*.csproj
 
 # Игнорируем файлы Mac
 .DS_Store
