@@ -8,7 +8,7 @@ public class CarAIController : MonoBehaviour
     public float acceleration = 1f;
     public float deceleration = 1.5f;
     public float slowDownDistance = 1.5f;
-    public float reachThreshold = 0.05f;
+    public float reachThreshold = 0.2f; // Увеличено для точного срабатывания
 
     private float currentSpeed = 0f;
 
@@ -22,31 +22,30 @@ public class CarAIController : MonoBehaviour
         if (currentTarget == null) return;
 
         Vector3 direction = currentTarget.transform.position - transform.position;
-        direction.y = 0f;
-
         float distance = direction.magnitude;
 
-        if (direction.sqrMagnitude < 0.01f)
+        if (distance < 0.01f)
         {
             Debug.LogWarning($"{gameObject.name}: Target direction too small!");
             return;
         }
 
-        // Плавное замедление
+        // Плавное замедление и ускорение
         if (distance < slowDownDistance)
             currentSpeed = Mathf.Max(currentSpeed - deceleration * Time.deltaTime, 0.2f);
         else
             currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxMoveSpeed);
 
-        // Двигаем и поворачиваем
+        // Поворот по ходу
         transform.forward = direction.normalized;
+
+        // Движение
         transform.position += transform.forward * currentSpeed * Time.deltaTime;
 
-        Vector3 flatCarPos = new Vector3(transform.position.x, 0, transform.position.z);
-        Vector3 flatTarget = new Vector3(currentTarget.transform.position.x, 0, currentTarget.transform.position.z);
-
-        if (Vector3.Distance(flatCarPos, flatTarget) < reachThreshold)
+        // Достижение цели — теперь с 3D сравниванием!
+        if (Vector3.Distance(transform.position, currentTarget.transform.position) < reachThreshold)
         {
+            Debug.Log($"{gameObject.name} достиг точки {currentTarget.name}");
             ChooseNextWaypoint();
         }
     }
@@ -60,6 +59,7 @@ public class CarAIController : MonoBehaviour
         }
 
         List<WaypointNode> options = new List<WaypointNode>(currentTarget.connectedWaypoints);
+
         if (previousTarget != null && options.Count > 1)
             options.Remove(previousTarget);
 

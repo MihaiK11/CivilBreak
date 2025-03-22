@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 public class CarSpawner : MonoBehaviour
 {
@@ -21,13 +22,22 @@ public class CarSpawner : MonoBehaviour
             WaypointNode node = child.GetComponent<WaypointNode>();
             if (node != null)
             {
-                spawnPoints.Add(node);
+                // Чекаем имя на наличие номера
+                string name = child.name;
+                int number;
+                if (int.TryParse(Regex.Match(name, @"\d+").Value, out number))
+                {
+                    if (number % 2 == 0) // чётный номер
+                    {
+                        spawnPoints.Add(node);
+                    }
+                }
             }
         }
 
         if (spawnPoints.Count == 0)
         {
-            Debug.LogError("Не найден ни один WaypointNode в waypointRoot!");
+            Debug.LogError("Не найден ни один чётный WaypointNode в waypointRoot!");
             return;
         }
 
