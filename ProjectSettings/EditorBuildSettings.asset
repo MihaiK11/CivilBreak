@@ -11,4 +11,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/kitchen_scene.unity
     guid: aa860802d9e4741f29955a2ef3b17ca6
+  - enabled: 1
+    path: Assets/Scenes/Gameplay_scene.unity
+    guid: ba9bb49584d1a44e187bc756aa059b13
+  - enabled: 1
+    path: Assets/Scenes/Gameplay_copy.unity
+    guid: a7dfc8853e494c247aa1d6c10b8fbf9f
   m_configObjects: {}
