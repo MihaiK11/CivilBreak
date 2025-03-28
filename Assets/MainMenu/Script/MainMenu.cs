@@ -7,6 +7,6 @@ public class MainMenu : MonoBehaviour
 {
     public void PlayGame()
     {
-        SceneManager.LoadScene("Gameplay_copy");
+        SceneManager.LoadScene("Story");
     }
 }
