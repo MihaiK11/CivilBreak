@@ -1,26 +1,35 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
     [Header("Subtitles")]
-    public SubtitleController subtitleController; // назначить вручную в инспекторе
+    public SubtitleController subtitleController;
 
-    [Header("Сценарий вступления")]
+    [Header("Camera Control")]
+    public CameraController cameraController;
+
+    [Header("Intro Lines (Romanian)")]
     [TextArea(3, 10)]
     public List<string> introLines = new List<string>
     {
-    "Si iarasi incepe o noua zi... aceeasi rutina obositoare...",
-    "Totul pare lipsit de sens... si din nou trebuie sa merg la tribunal...",
-    "Fratele meu nu se mai intoarce... Guvernul si-a pierdut complet controlul...",
-    "Astazi au anulat si asigurarea medicala... Fara nicio explicatie.",
-    "Am astm... Ce rost mai au banii daca nu pot sa-mi cumpar medicamente?",
-    "Toata lumea tace, accepta... Dar eu nu mai pot sa stau deoparte.",
-    "Daca nimeni nu face nimic, o sa fac eu. O sa pun totul la locul lui."
+        "Si iarasi o noua zi, blestemata zi a veveritei...",
+        "Ce viata fara sens... si din nou trebuie sa merg la tribunal...",
+        "Fratele meu nu se mai intoarce... Guvernul a luat-o razna complet...",
+        "Ce naiba? Am astm... La ce-mi folosesc banii daca nu am medicamente?",
+        "Am tot asteptat sa se schimbe ceva... Dar ajunge.",
+        "O sa pun eu lucrurile la locul lor. Cu orice pret."
     };
+
+    [Header("Radio Scene Event")]
+    public GameObject radioObject; // Назначить объект радио в инспекторе
+    public AudioClip radioClip;    // Назначить звук радио в инспекторе
+    public float radioZoomDuration = 3f;
+    public float radioZoomFOV = 25f;
+    private AudioSource radioSource;
 
     private void Awake()
     {
@@ -30,17 +39,90 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        if (cameraController != null)
+            cameraController.enabled = false;
+
+        if (radioObject != null)
+            radioSource = radioObject.GetComponent<AudioSource>();
+
         StartCoroutine(PlayIntroSequence());
     }
 
     private IEnumerator PlayIntroSequence()
     {
-        foreach (string line in introLines)
+        for (int i = 0; i < introLines.Count; i++)
         {
-            yield return subtitleController.TypeLineWithSkip(line);
+            yield return subtitleController.TypeLineWithSkip(introLines[i]);
+
+            // После 3-й реплики включаем радио
+            if (i == 2)
+            {
+                if (radioSource != null && radioClip != null)
+                {
+                    radioSource.clip = radioClip;
+                    radioSource.Play();
+
+                    yield return StartCoroutine(FocusOnRadio());
+                }
+            }
         }
 
-        Debug.Log("Интро закончено. Пора действовать!");
-        // Здесь логика перехода к игре
+        if (cameraController != null)
+            cameraController.enabled = true;
+
+        Debug.Log("Intro complete. Camera control is now enabled.");
     }
+
+    [SerializeField] private AudioSource radioAudio;
+[SerializeField] private Transform radioTransform;
+[SerializeField] private AudioSource cityAmbienceAudio;
+
+[SerializeField] private float zoomFOV = 20f;
+[SerializeField] private float zoomDuration = 1f;
+[SerializeField] private float stayDuration = 3f;
+
+private IEnumerator FocusOnRadio()
+{
+    float originalFOV = Camera.main.fieldOfView;
+    Vector3 originalPosition = Camera.main.transform.position;
+    Quaternion originalRotation = Camera.main.transform.rotation;
+
+    // Поворачиваем камеру к радио
+    Camera.main.transform.LookAt(radioTransform);
+
+    // Зумим
+    float t = 0;
+    while (t < zoomDuration)
+    {
+        Camera.main.fieldOfView = Mathf.Lerp(originalFOV, zoomFOV, t / zoomDuration);
+        t += Time.deltaTime;
+        yield return null;
+    }
+    Camera.main.fieldOfView = zoomFOV;
+
+    // Приглушаем шум города
+    if (cityAmbienceAudio != null)
+        cityAmbienceAudio.volume = 0.2f;
+
+    // Включаем радио
+    if (radioAudio != null && !radioAudio.isPlaying)
+        radioAudio.Play();
+
+    // Держим зум 3 секунды
+    yield return new WaitForSeconds(stayDuration);
+
+    // Возвращаем камеру
+    t = 0;
+    while (t < zoomDuration)
+    {
+        Camera.main.fieldOfView = Mathf.Lerp(zoomFOV, originalFOV, t / zoomDuration);
+        t += Time.deltaTime;
+        yield return null;
+    }
+    Camera.main.fieldOfView = originalFOV;
+
+    // Возвращаем громкость города
+    if (cityAmbienceAudio != null)
+        cityAmbienceAudio.volume = 1f;
+}
 }

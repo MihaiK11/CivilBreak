@@ -1,45 +1,84 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 
 public class SubtitleController : MonoBehaviour
 {
-    public Text subtitleText;
-    public float typeSpeed = 0.04f;
+    [Header("UI Elements")]
+    public GameObject subtitlePanel;         // Панель с Image и Text
+    public Text subtitleText;                // Сам Text (Legacy)
+    public float typeSpeed = 0.04f;          // Скорость печати
 
-    private Coroutine typingCoroutine;
     private bool isTyping = false;
-    private bool skipRequested = false;
+    private bool skipLine = false;
 
-    void Update()
+    private bool spacePressedAfterLine = false;
+    private bool allowContinue = false;
+
+    public IEnumerator PlaySubtitleSequence(List<string> lines)
     {
-        if (isTyping && Input.GetKeyDown(KeyCode.Space))
+        ShowPanel();
+
+        foreach (string line in lines)
         {
-            skipRequested = true;
+            yield return StartCoroutine(TypeLineWithSkip(line));
         }
+
+        HidePanel();
     }
 
     public IEnumerator TypeLineWithSkip(string line)
     {
-        subtitleText.text = "";
         isTyping = true;
-        skipRequested = false;
+        skipLine = false;
+        subtitleText.text = "";
+        allowContinue = false;
+        spacePressedAfterLine = false;
 
-        foreach (char letter in line.ToCharArray())
+        for (int i = 0; i < line.Length; i++)
         {
-            if (skipRequested)
+            if (skipLine)
             {
                 subtitleText.text = line;
                 break;
             }
 
-            subtitleText.text += letter;
+            subtitleText.text += line[i];
             yield return new WaitForSeconds(typeSpeed);
         }
 
         isTyping = false;
+        allowContinue = true;
 
-        // Ждём пока игрок нажмёт Space для перехода к следующему субтитру
-        yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+        // Ждём, пока игрок нажмёт пробел после окончания строки
+        yield return new WaitUntil(() => spacePressedAfterLine);
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (isTyping)
+            {
+                skipLine = true;
+            }
+            else if (allowContinue)
+            {
+                spacePressedAfterLine = true;
+            }
+        }
+    }
+
+    public void ShowPanel()
+    {
+        if (subtitlePanel != null)
+            subtitlePanel.SetActive(true);
+    }
+
+    public void HidePanel()
+    {
+        if (subtitlePanel != null)
+            subtitlePanel.SetActive(false);
     }
 }
