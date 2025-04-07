@@ -34,8 +34,6 @@ public class CameraController : MonoBehaviour
         HandleMovement();
         HandleZoom();
         HandleRotation();
-        HandleClickToMove();
-        SmoothMoveToTarget();
         ClampPosition();
     }
 
@@ -108,39 +106,5 @@ public class CameraController : MonoBehaviour
         pos.x = Mathf.Clamp(pos.x, xBounds.x, xBounds.y);
         pos.z = Mathf.Clamp(pos.z, zBounds.x, zBounds.y);
         transform.position = pos;
-    }
-
-    void HandleClickToMove()
-    {
-        if ((Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand)) && Input.GetMouseButtonDown(0))
-        {
-            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-
-            if (Physics.Raycast(ray, out hit, 500f))
-            {
-                Vector3 point = hit.point;
-
-                // Проверка: точка должна быть в зоне допустимых координат
-                if (point.x >= xBounds.x && point.x <= xBounds.y &&
-                    point.z >= zBounds.x && point.z <= zBounds.y)
-                {
-                    // Переезжаем к точке, оставляя текущую высоту
-                    targetPosition = new Vector3(point.x, transform.position.y, point.z);
-                }
-            }
-        }
-    }
-
-    void SmoothMoveToTarget()
-    {
-        if (targetPosition != null)
-        {
-            transform.position = Vector3.Lerp(transform.position, targetPosition.Value, smoothMoveSpeed * Time.deltaTime);
-
-            // Если почти добрались — завершить
-            if (Vector3.Distance(transform.position, targetPosition.Value) < 0.1f)
-                targetPosition = null;
-        }
     }
 }

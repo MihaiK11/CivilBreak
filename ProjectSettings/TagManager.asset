@@ -7,6 +7,7 @@ TagManager:
   - lb_bird
   - lb_groundTarget
   - lb_perchTarget
+  - radio
   layers:
   - Default
   - TransparentFX
