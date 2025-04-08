@@ -70,15 +70,15 @@ public class SubtitleController : MonoBehaviour
         }
     }
 
-    public void ShowPanel()
+   public void ShowPanel()
     {
-        if (subtitlePanel != null)
-            subtitlePanel.SetActive(true);
+        subtitlePanel.SetActive(true);
     }
 
-    public void HidePanel()
+public void HidePanel()
     {
-        if (subtitlePanel != null)
-            subtitlePanel.SetActive(false);
+        subtitlePanel.SetActive(false);
     }
+    
+    
 }
