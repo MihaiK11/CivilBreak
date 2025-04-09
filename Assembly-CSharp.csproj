@@ -67,6 +67,7 @@
     <Compile Include="Assets/living birds/scripts/lb_BirdController.cs" />
     <Compile Include="Assets/MainMenu/Script/StorySceneChange.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_TextEventHandler.cs" />
+    <Compile Include="Assets/Scripts/CarTrigger.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/VertexShakeA.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_ExampleScript_01.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMPro_InstructionOverlay.cs" />
@@ -114,7 +115,9 @@
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/ShaderPropAnimator.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/CameraController.cs" />
     <Compile Include="Assets/Scripts/CarAIController.cs" />
+    <Compile Include="Assets/Scripts/FlyerTypingMiniGame.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark03.cs" />
+    <Compile Include="Assets/Scripts/InstructionUI.cs" />
     <Compile Include="Assets/living birds/scripts/lb_CrowProximity.cs" />
     <Compile Include="Assets/Scripts/SubtitleController.cs" />
     <Compile Include="Assets/Scripts/CameraController.cs" />

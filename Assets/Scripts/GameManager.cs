@@ -39,6 +39,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float zoomDuration = 1f;
     [SerializeField] private float stayDuration = 3f;
 
+    [Header("Mini-game")]
+    [SerializeField] private GameObject flyerTypingManager;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -86,8 +89,12 @@ public class GameManager : MonoBehaviour
         // После последней строки — скрываем субтитры
         subtitleController.HidePanel();
 
+        // Включаем управление камерой
         if (cameraController != null)
             cameraController.enabled = true;
+
+        // Показываем инструкцию
+        InstructionUI.Instance.Show("Dan a decis sa rastoarne guvernul. Mai intai, vrea sa creeze pliante. Cauta masina lui rosie  in zona ghetoului. Ca sa dai click pe ea tine tasta Ctrl si apasa cu MouseLeftButton.");
 
         Debug.Log("Intro complete. Camera control is now enabled.");
     }
@@ -135,5 +142,11 @@ public class GameManager : MonoBehaviour
         // Возвращаем громкость города
         if (cityAmbienceAudio != null)
             cityAmbienceAudio.volume = 1f;
+    }
+
+    // Вызывается при клике на машину (CarTrigger)
+    public void StartFlyerTypingGame()
+    {
+        flyerTypingManager.SetActive(true); // Появляется панель ввода текста
     }
 }
