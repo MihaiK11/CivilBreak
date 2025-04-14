@@ -80,8 +80,11 @@ public class GameManager : MonoBehaviour
         {   
             if (i == 0)
             {
+                subtitleController.HidePanel(); // Hide subtitles before the intro animation
                 // Play any intro animation / hold a few seconds if needed
                 yield return StartCoroutine(IntroCameraSequence());
+
+                subtitleController.ShowPanel(); // Show subtitles after the intro animation
             }
             // === Trigger radio scene ===
             if (i == 2)
@@ -148,14 +151,20 @@ private IEnumerator IntroCameraSequence()
     // Disable the main camera and enable the intro camera
     SwitchCameras(mainCamera, introCamera); // Switch to the intro camera
 
+    introCameraTransition = introCamera.GetComponent<CameraTransition>();
+    if (introCameraTransition == null)
+    {
+        Debug.LogError("Intro camera transition component not found!");
+        yield break;
+    }
     // Calculate time to wait before switching to the main camera
-    float waitTime = introCameraTransition.GetTotalTransitionTime() + 3f; // Add 3 seconds for the intro animation
+    float waitTime = introCameraTransition.GetTotalTransitionTime(); // Add 3 seconds for the intro animation
 
     // Play any intro animation / hold a few seconds if needed
     yield return new WaitForSeconds(waitTime); // Adjust timing
 
     // Switch to main camera for subtitles
-    SwitchCameras(introCamera, mainCamera); // Switch to the radio camera for the radio scene
+    SwitchCameras(introCamera, mainCamera, 1f); // Switch to the radio camera for the radio scene
 }
 
     private IEnumerator FocusOnRadio()
