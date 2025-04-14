@@ -118,6 +118,7 @@ public class GameManager : MonoBehaviour
 
         // Switch back to the main camera
         SwitchCameras(radioCamera, mainCamera, 2f);
+        yield return new WaitForSeconds(2f); // Wait for the blend to complete
 
         // Enable camera control
         if (cameraController != null)
