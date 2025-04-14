@@ -1,7 +1,10 @@
 using UnityEngine;
+using Cinemachine;
 
 public class CameraController : MonoBehaviour
 {
+    public CinemachineVirtualCamera virtualCamera; // Assign your virtual camera here
+
     public float moveSpeed = 10f;
     public float zoomSpeed = 40f;
     public float rotationSpeed = 300f;
@@ -13,16 +16,22 @@ public class CameraController : MonoBehaviour
     public Vector2 zBounds = new Vector2(-31f, 38f);
 
     private bool isCursorVisible = false;
-    private Camera cam;
 
-    // Для плавного перемещения
-    private Vector3? targetPosition = null;
-    public float smoothMoveSpeed = 5f;
+    private Vector3 initialCameraPosition;  // Store the starting position of the camera
+    private Quaternion initialCameraRotation; // Store the starting rotation of the camera
 
     void Start()
     {
-        cam = GetComponent<Camera>();
-        if (cam == null) cam = Camera.main;
+        if (virtualCamera == null)
+        {
+            Debug.LogError("Virtual Camera is not assigned!");
+            enabled = false;
+            return;
+        }
+
+        // Store the camera's initial position and rotation
+        initialCameraPosition = transform.position;
+        initialCameraRotation = transform.rotation;
 
         transform.rotation = Quaternion.Euler(33.341f, 90f, 0f);
         ToggleCursor(false);
@@ -39,7 +48,7 @@ public class CameraController : MonoBehaviour
 
     void HandleCursorToggle()
     {
-        if (Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand) || Input.GetKey(KeyCode.LeftControl))
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
         {
             if (!isCursorVisible)
                 ToggleCursor(true);
@@ -60,14 +69,21 @@ public class CameraController : MonoBehaviour
 
     void HandleMovement()
     {
-        if (targetPosition != null) return; // если в процессе переезда, не мешаем
-
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
 
-        Vector3 right = transform.right; right.y = 0; right.Normalize();
-        Vector3 forward = Vector3.Cross(right, Vector3.up); forward.y = 0; forward.Normalize();
+        // Get the camera's forward and right vectors (relative to camera's orientation)
+        Vector3 forward = transform.forward;
+        Vector3 right = transform.right;
 
+        // Flatten Y to keep movement horizontal (no vertical movement)
+        forward.y = 0;
+        right.y = 0;
+
+        forward.Normalize();
+        right.Normalize();
+
+        // Calculate movement based on camera's orientation
         Vector3 move = (right * h + forward * v).normalized * moveSpeed * Time.deltaTime;
         transform.position += move;
     }
@@ -77,22 +93,25 @@ public class CameraController : MonoBehaviour
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0)
         {
-            cam.fieldOfView -= scroll * zoomSpeed;
-            cam.fieldOfView = Mathf.Clamp(cam.fieldOfView, minFOV, maxFOV);
+            float newFOV = virtualCamera.m_Lens.FieldOfView - scroll * zoomSpeed;
+            virtualCamera.m_Lens.FieldOfView = Mathf.Clamp(newFOV, minFOV, maxFOV);
         }
     }
 
     void HandleRotation()
     {
-        if (!isCursorVisible && targetPosition == null)
+        if (!isCursorVisible)
         {
+            // Get mouse movement
             float mouseX = Input.GetAxis("Mouse X");
 
-            // Динамическая скорость: ближе — медленнее, дальше — быстрее
-            float adjustedRotationSpeed = rotationSpeed * (cam.fieldOfView / maxFOV);
+            // Adjust rotation speed based on FOV (zoom level)
+            float adjustedRotationSpeed = rotationSpeed * (virtualCamera.m_Lens.FieldOfView / maxFOV);
 
+            // Apply rotation based on mouse X movement
             transform.Rotate(Vector3.up, mouseX * adjustedRotationSpeed * Time.deltaTime, Space.World);
 
+            // Fix camera pitch (X axis) to keep it horizontal
             Vector3 euler = transform.rotation.eulerAngles;
             euler.x = 33.341f;
             euler.z = 0f;

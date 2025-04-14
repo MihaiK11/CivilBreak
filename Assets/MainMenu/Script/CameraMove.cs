@@ -78,4 +78,14 @@ public class CameraTransition : MonoBehaviour
             }
         }
     }
+    
+    public float GetTotalTransitionTime()
+    {
+        float total = 0f;
+        foreach (float duration in transitionDurations)
+        {
+            total += duration;
+        }
+        return total;
+    }
 }
