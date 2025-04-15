@@ -1,43 +1,71 @@
 using UnityEngine;
 
+[RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 0.5f;
-    public float mouseSensitivity = 0.2f;
-    public Transform orientation;          // rotates with mouse (horizontal and vertical)
-    public Transform cameraFollowTarget;   // used by Cinemachine
+    public float speed = 2f;
+    public float mouseSensitivity = 2f;
+    public float jumpHeight = 1.2f;
+    public Transform orientation;          // Rotates with mouse (horizontal)
+    public Transform cameraFollowTarget;   // Used by Cinemachine (vertical)
 
-    float verticalRotation = 0;
-    float horizontalRotation = 0;
+    private CharacterController controller;
+    private float verticalRotation = 0f;
+    private float gravity = -9.81f;
+    private Vector3 velocity;
 
     void Start()
     {
-        // Lock and hide the cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        controller = GetComponent<CharacterController>();
     }
 
     void Update()
-    {   
-        // Mouse look
+    {
+        HandleMouseLook();
+        HandleMovement();
+    }
+
+    void HandleMouseLook()
+    {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * 0.25f;
 
-        horizontalRotation += mouseX;
         verticalRotation -= mouseY;
         verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f);
 
-        // Apply rotations
-        orientation.rotation = Quaternion.Euler(0f, horizontalRotation, 0f);
+        orientation.Rotate(Vector3.up * mouseX);
         cameraFollowTarget.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
+    }
 
-        // Movement
+    void HandleMovement()
+    {
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
-        Vector3 direction = orientation.forward * v + orientation.right * h;
-        direction.y = 0;
+        Vector3 move = orientation.forward * v + orientation.right * h;
+        move.y = 0;
 
-        transform.position += direction.normalized * speed * Time.deltaTime;
+        controller.Move(move.normalized * speed * Time.deltaTime);
+
+        // Check if grounded
+        if (controller.isGrounded)
+        {
+    
+            if (velocity.y < 0)
+                velocity.y = -2f; // Stick to ground
+
+            // Jump
+            if (Input.GetButtonDown("Jump"))
+            {
+                velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            }
+        }
+
+        // Gravity
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
     }
 }
