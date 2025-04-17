@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cinemachine;
+using UnityEditor.SceneManagement;  // Make sure to include the Cinemachine namespace
 
 public class GameManager : MonoBehaviour
 {
@@ -11,6 +13,9 @@ public class GameManager : MonoBehaviour
 
     [Header("Camera Control")]
     public CameraController cameraController;
+
+    [Header("Cinemachine Brain")]
+    private CinemachineBrain cinemachineBrain;
 
     [Header("Intro Lines (Romanian)")]
     [TextArea(3, 10)]
@@ -25,8 +30,8 @@ public class GameManager : MonoBehaviour
     };
 
     [Header("Radio Scene Event")]
-    public GameObject radioObject; // Назначить объект радио в инспекторе
-    public AudioClip radioClip;    // Назначить звук радио в инспекторе
+    public GameObject radioObject; // Assign the radio object in the inspector
+    public AudioClip radioClip;    // Assign the radio clip in the inspector
     public float radioZoomDuration = 3f;
     public float radioZoomFOV = 25f;
     private AudioSource radioSource;
@@ -35,12 +40,21 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform radioTransform;
     [SerializeField] private AudioSource cityAmbienceAudio;
 
+    [Header("Intro Animation")]
+    [SerializeField] private CameraTransition introCameraTransition;
+
+
     [SerializeField] private float zoomFOV = 20f;
     [SerializeField] private float zoomDuration = 1f;
     [SerializeField] private float stayDuration = 3f;
 
     [Header("Mini-game")]
     [SerializeField] private GameObject flyerTypingManager;
+
+    [Header("Cinemachine Cameras")]
+    public CinemachineVirtualCamera mainCamera;  // Reference to the main virtual camera
+    public CinemachineVirtualCamera introCamera; // Reference to the intro virtual camera
+    public CinemachineVirtualCamera radioCamera; // Reference to the radio virtual camera
 
     private void Awake()
     {
@@ -49,27 +63,39 @@ public class GameManager : MonoBehaviour
     }
 
     private void Start()
-    {
+    {   
         if (cameraController != null)
             cameraController.enabled = false;
 
         if (radioObject != null)
             radioSource = radioObject.GetComponent<AudioSource>();
-
+        
+        cinemachineBrain = Camera.main.GetComponent<CinemachineBrain>();
         StartCoroutine(PlayIntroSequence());
     }
 
     private IEnumerator PlayIntroSequence()
     {
         for (int i = 0; i < introLines.Count; i++)
-        {
-            // === Точка срабатывания радиосцены ===
+        {   
+            if (i == 0)
+            {
+                subtitleController.HidePanel(); // Hide subtitles before the intro animation
+                // Play any intro animation / hold a few seconds if needed
+                yield return StartCoroutine(IntroCameraSequence());
+
+                subtitleController.ShowPanel(); // Show subtitles after the intro animation
+            }
+            // === Trigger radio scene ===
             if (i == 2)
             {
-                // Скрываем субтитры перед сценой с радио
+                // Switch to the radio camera for the radio scene
+                SwitchCameras(mainCamera, radioCamera); // Switch to the radio camera
+
+                // Hide subtitles before the radio scene
                 subtitleController.HidePanel();
 
-                // Включаем радио и делаем зум
+                // Play the radio and zoom in
                 if (radioSource != null && radioClip != null)
                 {
                     radioSource.clip = radioClip;
@@ -78,75 +104,120 @@ public class GameManager : MonoBehaviour
 
                 yield return StartCoroutine(FocusOnRadio());
 
-                // Возвращаем панель субтитров
+                // Show subtitles again after the radio scene
                 subtitleController.ShowPanel();
+
             }
 
-            // Показываем строку
+            // Display the current intro line
             yield return subtitleController.TypeLineWithSkip(introLines[i]);
         }
 
-        // После последней строки — скрываем субтитры
+        // After the last line, hide the subtitles
         subtitleController.HidePanel();
 
-        // Включаем управление камерой
+        // Switch back to the main camera
+        SwitchCameras(radioCamera, mainCamera, 2f);
+        yield return new WaitForSeconds(2f); // Wait for the blend to complete
+
+        // Enable camera control
         if (cameraController != null)
             cameraController.enabled = true;
 
-        // Показываем инструкцию
-        InstructionUI.Instance.Show("Dan a decis sa rastoarne guvernul. Mai intai, vrea sa creeze pliante. Cauta masina lui rosie  in zona ghetoului. Ca sa dai click pe ea tine tasta Ctrl si apasa cu MouseLeftButton.");
+        // Show the instruction UI
+        InstructionUI.Instance.Show("Dan a decis sa rastoarne guvernul. Mai intai, vrea sa creeze pliante. Cauta masina lui rosie in zona ghetoului. Ca sa dai click pe ea tine tasta Ctrl si apasa cu MouseLeftButton.");
 
         Debug.Log("Intro complete. Camera control is now enabled.");
     }
 
-    private IEnumerator FocusOnRadio()
+    // Generic function to switch between two cameras
+    private void SwitchCameras(CinemachineVirtualCamera camera1, CinemachineVirtualCamera camera2, float blendDuration = 0f)
     {
-        float originalFOV = Camera.main.fieldOfView;
-        Vector3 originalPosition = Camera.main.transform.position;
-        Quaternion originalRotation = Camera.main.transform.rotation;
-
-        // Поворачиваем камеру к радио
-        Camera.main.transform.LookAt(radioTransform);
-
-        // Зумим
-        float t = 0;
-        while (t < zoomDuration)
+        if (camera1 != null && camera2 != null)
         {
-            Camera.main.fieldOfView = Mathf.Lerp(originalFOV, zoomFOV, t / zoomDuration);
-            t += Time.deltaTime;
-            yield return null;
+            if (cinemachineBrain != null)
+            {
+                // Set the default blend
+                var customBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Style.EaseInOut, blendDuration);
+                cinemachineBrain.m_DefaultBlend = customBlend;
+            }
+            // Set the priority of camera1 to a lower value and camera2 to a higher value
+            camera1.Priority = 0;   // Lower priority for camera1
+            camera2.Priority = 10;  // Higher priority for camera2
         }
-        Camera.main.fieldOfView = zoomFOV;
-
-        // Приглушаем шум города
-        if (cityAmbienceAudio != null)
-            cityAmbienceAudio.volume = 0.2f;
-
-        // Включаем радио (если не было выше)
-        if (radioAudio != null && !radioAudio.isPlaying)
-            radioAudio.Play();
-
-        // Держим зум 3 секунды
-        yield return new WaitForSeconds(stayDuration);
-
-        // Возвращаем камеру
-        t = 0;
-        while (t < zoomDuration)
-        {
-            Camera.main.fieldOfView = Mathf.Lerp(zoomFOV, originalFOV, t / zoomDuration);
-            t += Time.deltaTime;
-            yield return null;
-        }
-        Camera.main.fieldOfView = originalFOV;
-
-        // Возвращаем громкость города
-        if (cityAmbienceAudio != null)
-            cityAmbienceAudio.volume = 1f;
     }
 
-    // Вызывается при клике на машину (CarTrigger)
+private IEnumerator IntroCameraSequence()
+{   
+    // Disable the main camera and enable the intro camera
+    SwitchCameras(mainCamera, introCamera); // Switch to the intro camera
+
+    introCameraTransition = introCamera.GetComponent<CameraTransition>();
+    if (introCameraTransition == null)
+    {
+        Debug.LogError("Intro camera transition component not found!");
+        yield break;
+    }
+    // Calculate time to wait before switching to the main camera
+    float waitTime = introCameraTransition.GetTotalTransitionTime(); // Add 3 seconds for the intro animation
+
+    // Play any intro animation / hold a few seconds if needed
+    yield return new WaitForSeconds(waitTime); // Adjust timing
+
+    // Switch to main camera for subtitles
+    SwitchCameras(introCamera, mainCamera, 1f); // Switch to the radio camera for the radio scene
+}
+
+    private IEnumerator FocusOnRadio()
+{
+    // Store the original field of view of the radio camera
+    float originalFOV = radioCamera.m_Lens.FieldOfView;
+    Vector3 originalPosition = radioCamera.transform.position;
+    Quaternion originalRotation = radioCamera.transform.rotation;
+
+    // Rotate the radio camera towards the radio
+    radioCamera.transform.LookAt(radioTransform);
+
+    // Zoom in on the radio
+    float t = 0;
+    while (t < zoomDuration)
+    {
+        radioCamera.m_Lens.FieldOfView = Mathf.Lerp(originalFOV, zoomFOV, t / zoomDuration);
+        t += Time.deltaTime;
+        yield return null;
+    }
+    radioCamera.m_Lens.FieldOfView = zoomFOV;
+
+    // Lower the city ambience sound
+    if (cityAmbienceAudio != null)
+        cityAmbienceAudio.volume = 0.2f;
+
+    // Play the radio audio if not already playing
+    if (radioAudio != null && !radioAudio.isPlaying)
+        radioAudio.Play();
+
+    // Hold the zoom for the specified duration
+    yield return new WaitForSeconds(stayDuration);
+
+    // Return the radio camera to its original position
+    t = 0;
+    while (t < zoomDuration)
+    {
+        radioCamera.m_Lens.FieldOfView = Mathf.Lerp(zoomFOV, originalFOV, t / zoomDuration);
+        t += Time.deltaTime;
+        yield return null;
+    }
+    radioCamera.m_Lens.FieldOfView = originalFOV;
+
+    // Restore the city ambience sound
+    if (cityAmbienceAudio != null)
+        cityAmbienceAudio.volume = 1f;
+}
+
+
+    // Called when the car is clicked (CarTrigger)
     public void StartFlyerTypingGame()
     {
-        flyerTypingManager.SetActive(true); // Появляется панель ввода текста
+        flyerTypingManager.SetActive(true); // Activate the flyer typing game panel
     }
 }

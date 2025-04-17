@@ -7,7 +7,7 @@ public class ChangeScene : MonoBehaviour
     {
         if (Input.anyKeyDown) // Detects any key press
         {
-            SceneManager.LoadScene("Gameplay_copy"); // Change to your scene name
+            SceneManager.LoadScene("copy"); // Change to your scene name
         }
     }
 }
