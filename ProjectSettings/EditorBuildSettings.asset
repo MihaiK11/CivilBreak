@@ -24,6 +24,6 @@ EditorBuildSettings:
     path: Assets/Scenes/Gameplay_scene.unity
     guid: 33187972447778547b73163ec8eadde0
   - enabled: 1
-    path: Assets/Scenes/copy.unity
+    path: Assets/Scenes/pliante.unity
     guid: 46cf20b1b89cdf743a65ad2c8c6ee07f
   m_configObjects: {}
