@@ -91,7 +91,7 @@ public class CarSpawner : MonoBehaviour
             if (spawnPoint.connectedWaypoints != null && spawnPoint.connectedWaypoints.Count > 0)
             {
                 ai.currentTarget = spawnPoint.connectedWaypoints[Random.Range(0, spawnPoint.connectedWaypoints.Count)];
-                Debug.Log($"{car.name} будет ехать от {spawnPoint.name} к {ai.currentTarget.name}");
+                // Debug.Log($"{car.name} будет ехать от {spawnPoint.name} к {ai.currentTarget.name}");
                 activeCars.Add(car);
             }
             else

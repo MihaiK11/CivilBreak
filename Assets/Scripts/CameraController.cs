@@ -39,6 +39,10 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
+        // Dacă UI-ul de tastare e activ, nu facem nimic (camera nu se mișcă sau rotește)
+        if (Click.IsUIActive)
+            return;
+
         HandleCursorToggle();
         HandleMovement();
         HandleZoom();

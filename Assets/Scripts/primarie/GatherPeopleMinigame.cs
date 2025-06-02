@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class GatherPeopleMinigame : MonoBehaviour
 {
@@ -8,8 +9,12 @@ public class GatherPeopleMinigame : MonoBehaviour
     public int maxNPCs = 10;
     public Transform player;
 
+    public AudioSource policeSirenAudio; // Assign in inspector (police siren sound)
+    public string prisonSceneName = "PrisonScene"; // Set your prison scene name here
+    public float delayBeforeSceneChange = 5f; // Delay in seconds before changing scene
+
     private int currentPointIndex = 0;
-    private List<List<GameObject>> allGroups = new List<List<GameObject>>(); // store groups per point
+    private List<List<GameObject>> allGroups = new List<List<GameObject>>();
     private List<GameObject> currentGroup = new List<GameObject>();
     private bool inGatherZone = false;
     private int spacePressCount = 0;
@@ -18,8 +23,8 @@ public class GatherPeopleMinigame : MonoBehaviour
     private bool gatherComplete = false;
 
     // Formation settings
-    private int formationColumns = 5;    // Number of NPCs per row
-    private float spacing = 0.05f;        // Space between NPCs
+    private int formationColumns = 5;
+    private float spacing = 0.05f;
 
     void Update()
     {
@@ -38,12 +43,9 @@ public class GatherPeopleMinigame : MonoBehaviour
                     if (spacePressCount >= maxNPCs)
                     {
                         gatherComplete = true;
-                        allGroups.Add(new List<GameObject>(currentGroup)); // save current group permanently
-                        currentGroup = new List<GameObject>(); // reset for next point
+                        allGroups.Add(new List<GameObject>(currentGroup));
+                        currentGroup = new List<GameObject>();
                         Debug.Log("Gather complete! NPCs stay visible.");
-
-                        // Optional: Automatically move player to next point or wait for input
-                        // For now, just let the player move manually.
                     }
                 }
             }
@@ -52,20 +54,18 @@ public class GatherPeopleMinigame : MonoBehaviour
             {
                 ResetCurrentGroup();
             }
+        }
 
-            // Example: move to next point automatically once complete
-            // Or you can implement your own trigger to move player
-            if (gatherComplete && Input.GetKeyDown(KeyCode.Return))
-            {
-                GoToNextPoint();
-            }
+        if (gatherComplete && Input.GetKeyDown(KeyCode.Return))
+        {
+            GoToNextPoint();
         }
     }
 
     void CheckPlayerInGatherZone()
     {
         float dist = Vector3.Distance(player.position, gatherPoints[currentPointIndex].position);
-        inGatherZone = dist <= 2f;
+        inGatherZone = dist <= 0.15f;
     }
 
     void AddNPC(int index)
@@ -75,18 +75,30 @@ public class GatherPeopleMinigame : MonoBehaviour
 
         int row = index / formationColumns;
         int col = index % formationColumns;
-
+        float toTownHall = 0.15f;
         Vector3 spawnPos = gatherPoints[currentPointIndex].position +
-                           new Vector3(row * spacing, 0, col * spacing);
+                           new Vector3(row * spacing - toTownHall, 0, col * spacing);
 
         Quaternion rotation = Quaternion.Euler(0f, -90f, 0f);
 
         GameObject npc = Instantiate(npcPrefab, spawnPos, rotation);
+
+        var ai = npc.GetComponent<PedestrianAIPrimarie>();
+        if (ai != null)
+        {
+            PedestrianWaypoint waypoint = gatherPoints[currentPointIndex].GetComponent<PedestrianWaypoint>();
+            if (waypoint != null)
+            {
+                ai.currentTarget = waypoint;
+            }
+        }
+
         currentGroup.Add(npc);
     }
 
     void ResetCurrentGroup()
     {
+        Debug.Log("Timeout reached! Resetting group...");
         spacePressCount = 0;
         foreach (var npc in currentGroup)
             Destroy(npc);
@@ -95,7 +107,7 @@ public class GatherPeopleMinigame : MonoBehaviour
 
     void GoToNextPoint()
     {
-        // Do NOT destroy previously spawned groups, so they stay visible!
+        Debug.Log("Moving to next gather point.");
 
         spacePressCount = 0;
         gatherComplete = false;
@@ -105,9 +117,27 @@ public class GatherPeopleMinigame : MonoBehaviour
         if (currentPointIndex >= gatherPoints.Length)
         {
             Debug.Log("Minigame finished!");
+
+            StartPoliceArrivalSequence();
+
             enabled = false;
             return;
         }
-        Debug.Log("Go to next gathering point!");
+
+        Debug.Log($"Go to next gathering point: {currentPointIndex}");
+    }
+
+    void StartPoliceArrivalSequence()
+    {
+        if (policeSirenAudio != null)
+        {
+            policeSirenAudio.Play();
+        }
+        Invoke(nameof(ChangeToPrisonScene), delayBeforeSceneChange);
+    }
+
+    void ChangeToPrisonScene()
+    {
+        SceneManager.LoadScene(prisonSceneName);
     }
 }

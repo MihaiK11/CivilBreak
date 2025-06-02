@@ -84,6 +84,8 @@ public class FlyerTypingMiniGame : MonoBehaviour
             laptopPanel.SetActive(false);
 
         instructionUI.Hide();
+        GameManager.Instance.EndMiniGame(); // Завершаем мини-игру, если она уже была запущена
         gameObject.SetActive(false); // отключаем сам менеджер
+        
     }
 }
