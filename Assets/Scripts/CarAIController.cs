@@ -45,7 +45,7 @@ public class CarAIController : MonoBehaviour
         // Достижение цели — теперь с 3D сравниванием!
         if (Vector3.Distance(transform.position, currentTarget.transform.position) < reachThreshold)
         {
-            Debug.Log($"{gameObject.name} достиг точки {currentTarget.name}");
+            // Debug.Log($"{gameObject.name} достиг точки {currentTarget.name}");
             ChooseNextWaypoint();
         }
     }

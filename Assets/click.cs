@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Click : MonoBehaviour
 {
@@ -14,6 +15,9 @@ public class Click : MonoBehaviour
 
     public ParticleSystem fumFabrica;  // Particle System pentru fum
 
+    // Variabilă statică publică ca să știe camera dacă UI e activ
+    public static bool IsUIActive { get; private set; } = false;
+
     private string mesajComplet = "Declar oprirea fabricii imediat, fară vreo altă oprire!";
     private int literaIndex = 0;
     private bool isListening = false;
@@ -26,6 +30,8 @@ public class Click : MonoBehaviour
         if (messageUI != null && declaratieText != null)
         {
             messageUI.SetActive(true);
+            IsUIActive = true; // Blochează camera
+
             declaratieText.text = "";
             literaIndex = 0;
             isListening = true;
@@ -101,7 +107,14 @@ public class Click : MonoBehaviour
             fumFabrica.Stop(); // Opresc fum când câștig
 
         Invoke("HideMessage", 3f);
+        Invoke("LoadPrimariaScene", 3f);  // Schimb scena după 3 secunde
     }
+
+    void LoadPrimariaScene()
+    {
+        SceneManager.LoadScene("Primarie");
+    }
+
 
     void Lose()
     {
@@ -122,6 +135,7 @@ public class Click : MonoBehaviour
     void HideMessage()
     {
         messageUI.SetActive(false);
+        IsUIActive = false; // Deblochează camera când UI-ul se ascunde
 
         if (statusText != null)
         {

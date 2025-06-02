@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Cinemachine;
 using UnityEditor.SceneManagement;  // Make sure to include the Cinemachine namespace
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -63,13 +64,13 @@ public class GameManager : MonoBehaviour
     }
 
     private void Start()
-    {   
+    {
         if (cameraController != null)
             cameraController.enabled = false;
 
         if (radioObject != null)
             radioSource = radioObject.GetComponent<AudioSource>();
-        
+
         cinemachineBrain = Camera.main.GetComponent<CinemachineBrain>();
         StartCoroutine(PlayIntroSequence());
     }
@@ -77,7 +78,7 @@ public class GameManager : MonoBehaviour
     private IEnumerator PlayIntroSequence()
     {
         for (int i = 0; i < introLines.Count; i++)
-        {   
+        {
             if (i == 0)
             {
                 subtitleController.HidePanel(); // Hide subtitles before the intro animation
@@ -147,77 +148,83 @@ public class GameManager : MonoBehaviour
         }
     }
 
-private IEnumerator IntroCameraSequence()
-{   
-    // Disable the main camera and enable the intro camera
-    SwitchCameras(mainCamera, introCamera); // Switch to the intro camera
-
-    introCameraTransition = introCamera.GetComponent<CameraTransition>();
-    if (introCameraTransition == null)
+    private IEnumerator IntroCameraSequence()
     {
-        Debug.LogError("Intro camera transition component not found!");
-        yield break;
+        // Disable the main camera and enable the intro camera
+        SwitchCameras(mainCamera, introCamera); // Switch to the intro camera
+
+        introCameraTransition = introCamera.GetComponent<CameraTransition>();
+        if (introCameraTransition == null)
+        {
+            Debug.LogError("Intro camera transition component not found!");
+            yield break;
+        }
+        // Calculate time to wait before switching to the main camera
+        float waitTime = introCameraTransition.GetTotalTransitionTime(); // Add 3 seconds for the intro animation
+
+        // Play any intro animation / hold a few seconds if needed
+        yield return new WaitForSeconds(waitTime); // Adjust timing
+
+        // Switch to main camera for subtitles
+        SwitchCameras(introCamera, mainCamera, 1f); // Switch to the radio camera for the radio scene
     }
-    // Calculate time to wait before switching to the main camera
-    float waitTime = introCameraTransition.GetTotalTransitionTime(); // Add 3 seconds for the intro animation
-
-    // Play any intro animation / hold a few seconds if needed
-    yield return new WaitForSeconds(waitTime); // Adjust timing
-
-    // Switch to main camera for subtitles
-    SwitchCameras(introCamera, mainCamera, 1f); // Switch to the radio camera for the radio scene
-}
 
     private IEnumerator FocusOnRadio()
-{
-    // Store the original field of view of the radio camera
-    float originalFOV = radioCamera.m_Lens.FieldOfView;
-    Vector3 originalPosition = radioCamera.transform.position;
-    Quaternion originalRotation = radioCamera.transform.rotation;
-
-    // Rotate the radio camera towards the radio
-    radioCamera.transform.LookAt(radioTransform);
-
-    // Zoom in on the radio
-    float t = 0;
-    while (t < zoomDuration)
     {
-        radioCamera.m_Lens.FieldOfView = Mathf.Lerp(originalFOV, zoomFOV, t / zoomDuration);
-        t += Time.deltaTime;
-        yield return null;
+        // Store the original field of view of the radio camera
+        float originalFOV = radioCamera.m_Lens.FieldOfView;
+        Vector3 originalPosition = radioCamera.transform.position;
+        Quaternion originalRotation = radioCamera.transform.rotation;
+
+        // Rotate the radio camera towards the radio
+        radioCamera.transform.LookAt(radioTransform);
+
+        // Zoom in on the radio
+        float t = 0;
+        while (t < zoomDuration)
+        {
+            radioCamera.m_Lens.FieldOfView = Mathf.Lerp(originalFOV, zoomFOV, t / zoomDuration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+        radioCamera.m_Lens.FieldOfView = zoomFOV;
+
+        // Lower the city ambience sound
+        if (cityAmbienceAudio != null)
+            cityAmbienceAudio.volume = 0.2f;
+
+        // Play the radio audio if not already playing
+        if (radioAudio != null && !radioAudio.isPlaying)
+            radioAudio.Play();
+
+        // Hold the zoom for the specified duration
+        yield return new WaitForSeconds(stayDuration);
+
+        // Return the radio camera to its original position
+        t = 0;
+        while (t < zoomDuration)
+        {
+            radioCamera.m_Lens.FieldOfView = Mathf.Lerp(zoomFOV, originalFOV, t / zoomDuration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+        radioCamera.m_Lens.FieldOfView = originalFOV;
+
+        // Restore the city ambience sound
+        if (cityAmbienceAudio != null)
+            cityAmbienceAudio.volume = 1f;
     }
-    radioCamera.m_Lens.FieldOfView = zoomFOV;
-
-    // Lower the city ambience sound
-    if (cityAmbienceAudio != null)
-        cityAmbienceAudio.volume = 0.2f;
-
-    // Play the radio audio if not already playing
-    if (radioAudio != null && !radioAudio.isPlaying)
-        radioAudio.Play();
-
-    // Hold the zoom for the specified duration
-    yield return new WaitForSeconds(stayDuration);
-
-    // Return the radio camera to its original position
-    t = 0;
-    while (t < zoomDuration)
-    {
-        radioCamera.m_Lens.FieldOfView = Mathf.Lerp(zoomFOV, originalFOV, t / zoomDuration);
-        t += Time.deltaTime;
-        yield return null;
-    }
-    radioCamera.m_Lens.FieldOfView = originalFOV;
-
-    // Restore the city ambience sound
-    if (cityAmbienceAudio != null)
-        cityAmbienceAudio.volume = 1f;
-}
 
 
     // Called when the car is clicked (CarTrigger)
     public void StartFlyerTypingGame()
     {
         flyerTypingManager.SetActive(true); // Activate the flyer typing game panel
+    }
+    
+    public void EndMiniGame()
+    {
+        // Change to your desired scene, for example "NextScene"
+        SceneManager.LoadScene("Pliante");
     }
 }

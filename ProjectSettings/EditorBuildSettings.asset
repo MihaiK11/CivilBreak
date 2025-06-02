@@ -24,6 +24,12 @@ EditorBuildSettings:
     path: Assets/Scenes/Gameplay_scene.unity
     guid: 33187972447778547b73163ec8eadde0
   - enabled: 1
-    path: Assets/Scenes/pliante.unity
+    path: Assets/Scenes/Pliante.unity
     guid: 46cf20b1b89cdf743a65ad2c8c6ee07f
+  - enabled: 1
+    path: Assets/Scenes/Primarie.unity
+    guid: cb64dec20a99c1840937397835f92d15
+  - enabled: 1
+    path: Assets/Scenes/Prison.unity
+    guid: e4c8f527f54bfe442a201fb3733875c7
   m_configObjects: {}
